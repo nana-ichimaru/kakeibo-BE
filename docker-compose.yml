@@ -3,6 +3,14 @@ services:
     build: 
       context: .
       dockerfile: docker/api/Dockerfile
+    environment:
+      PYTHONPATH: "/"
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_CONNECTION: ${MYSQL_CONNECTION}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
     ports:
       - "8000:8000"
     volumes:

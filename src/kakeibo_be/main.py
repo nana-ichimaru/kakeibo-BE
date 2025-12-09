@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
+from kakeibo_be.api import router as api_router
+
 app = FastAPI()
 
-@app.get("/")
-def read_root() -> dict:
-    return {"Hello": "World"}
+app.include_router(api_router, prefix="/api")
+
