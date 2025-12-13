@@ -4,31 +4,53 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from kakeibo_be.exceptions.business_exception import BusinessException
+from kakeibo_be.logic.calculate.calculate_datetime import (
+    get_month_start_date,
+    get_next_month_start_date,
+)
 from kakeibo_be.models.db.base import get_db
 from kakeibo_be.models.db.cash_flow import CashFlow
-from kakeibo_be.models.request.v1.cash_flow import CreateCashFlowRequest
-from kakeibo_be.models.response.v1.cash_flow import CreateCashFlowResponse, GetCashFlowResponseItem
-from kakeibo_be.repositories.cash_flow import get_cash_flows_by_moth
+from kakeibo_be.models.request.v1.cash_flow import CreateCashFlowRequest, UpdateCashFlowRequest
+from kakeibo_be.models.response.v1.cash_flow import (
+    CreateCashFlowResponse,
+    GetCashFlowResponseItem,
+    UpdateCashFlowResponse,
+)
+from kakeibo_be.repositories.cash_flow import get_cash_flow_by_id, get_cash_flows_by_month
 
 router = APIRouter()
 
 
 @router.get("", response_model=list[GetCashFlowResponseItem])
 def get_cash_flows(
-    target_month: str, session: Annotated[Session, Depends(get_db)]
+    # http://localhost:8000/api/v1/cash-flows ここから ?target_month=2025-12-12T05%3A43%3A05.419Z
+    # target_month: datetime　使いたい関数の引数に設定すると　クエリパラメータ　になる
+    target_month: datetime,
+    session: Annotated[Session, Depends(get_db)],
 ) -> list[GetCashFlowResponseItem]:
-    month_dt = datetime.strptime(target_month, "%Y-%m")
-    a = get_cash_flows_by_moth(session=session, target_month=month_dt)
+    # strptime は「文字列を datetime に変換する関数」
+    # 2025-12-01 00:00:00
+
+    month_start_date = get_month_start_date(target_month)
+    next_month_start_date = get_next_month_start_date(target_month)
+
+    cash_flows = get_cash_flows_by_month(
+        session=session,
+        month_start_date=month_start_date,
+        next_month_start_date=next_month_start_date,
+    )
     result = []
-    for item in a:
-        b = GetCashFlowResponseItem(
-            id=item.id,
-            title=item.title,
-            type=item.type,
-            recorded_at=item.recorded_at,
-            amount=item.amount,
+    for cash_flow in cash_flows:
+        response_item = GetCashFlowResponseItem(
+            id=cash_flow.id,
+            title=cash_flow.title,
+            type=cash_flow.type,
+            recorded_at=cash_flow.recorded_at,
+            amount=cash_flow.amount,
         )
-        result.append(b)
+        # 配列に格納する　表現
+        result.append(response_item)
     return result
 
 
@@ -51,6 +73,7 @@ def create_cash_flow(
         session.commit()
     except Exception as e:
         session.rollback()
+        # 意図的にtryの中でキャッチしたエラーを再度発生させてpythonを止める
         raise e
 
     # 保存したデータをレスポンス用に変換して返却
@@ -63,9 +86,35 @@ def create_cash_flow(
     )
 
 
-@router.put("")
-def update_cash_flow() -> dict:
-    return {"status": "ok"}
+@router.put("/{cash_flow_id}", response_model=UpdateCashFlowResponse)
+def update_cash_flow(
+    cash_flow_id: int, body: UpdateCashFlowRequest, session: Annotated[Session, Depends(get_db)]
+) -> UpdateCashFlowResponse:
+    original_cash_flow = get_cash_flow_by_id(session=session, cash_flow_id=cash_flow_id)
+
+    if original_cash_flow is None:
+        raise BusinessException(message="CashFlow not found!")
+    original_cash_flow.title = body.title
+    original_cash_flow.type = body.type
+    original_cash_flow.recorded_at = body.recorded_at
+    original_cash_flow.amount = body.amount
+
+    session.add(original_cash_flow)
+
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        # 意図的にtryの中でキャッチしたエラーを再度発生させてpythonを止める
+        raise e
+
+    return UpdateCashFlowResponse(
+        id=original_cash_flow.id,
+        title=original_cash_flow.title,
+        type=original_cash_flow.type,
+        recorded_at=original_cash_flow.recorded_at,
+        amount=original_cash_flow.amount,
+    )
 
 
 @router.delete("")

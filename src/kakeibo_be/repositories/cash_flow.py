@@ -7,21 +7,33 @@ from sqlalchemy.orm import Session
 from kakeibo_be.models.db.cash_flow import CashFlow
 
 
-def get_cash_flows_by_moth(session: Session, target_month: datetime) -> list[CashFlow]:
-    # 月初
-    start_date = target_month.replace(day=1)
-
-    # 翌月の月初 = 範囲の終わり
-    if start_date.month == 12:
-        end_date = start_date.replace(year=start_date.year + 1, month=1)
-    else:
-        end_date = start_date.replace(month=start_date.month + 1)
-
+def get_cash_flows_by_month(
+    session: Session, month_start_date: datetime, next_month_start_date: datetime
+) -> list[CashFlow]:
     stmt = (
+        # CashFlow テーブル（モデル）を対象にした SELECT クエリを作成
         select(CashFlow)
-        .where(CashFlow.recorded_at >= start_date)
-        .where(CashFlow.recorded_at < end_date)
+        # recorded_at が start_date 以上（＝月初以降）を指定
+        .where(CashFlow.recorded_at >= month_start_date)
+        # recorded_at が end_date 未満（＝翌月の月初より前）を指定
+        .where(CashFlow.recorded_at < next_month_start_date)
+    )
+    # 型は Result（SQLAlchemy の「結果セット」を表すオブジェクト）。
+    # SQLAlchemy で組み立てた stmt（SQL文の設計図）を、実際にデータベースに送って実行する
+    result: Result = session.execute(stmt)
+
+    # scalars() がなかったら → Row のリストが返ってくる
+    # result.scalars() で 1行の中の「一番左のカラム（= CashFlow オブジェクト）」だけを取り出してくれる
+    return list(result.scalars())
+
+def get_cash_flow_by_id(session: Session, cash_flow_id: int) -> CashFlow | None:
+    result: Result = session.execute(
+        select(CashFlow).where(CashFlow.id == cash_flow_id)
     )
 
-    result: Result = session.execute(stmt)
-    return list(result.scalars().all())
+    # scalars()で結果をオブジェクトとして取得し、first()で最初の1件を返す
+    # 対応するTaskが存在しない場合は None を返す
+    return result.scalars().first()
+
+
+    

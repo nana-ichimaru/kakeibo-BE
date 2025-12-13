@@ -11,3 +11,9 @@ class CreateCashFlowRequest(BaseRequest):
     type: CashFlowType
     recorded_at: datetime
     amount: int = Field(gt=0)
+
+class UpdateCashFlowRequest(BaseRequest):
+    title: str
+    type: CashFlowType
+    recorded_at: datetime
+    amount: int 

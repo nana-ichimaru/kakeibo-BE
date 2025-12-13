@@ -17,3 +17,10 @@ class GetCashFlowResponseItem(BaseResponse):
     type: CashFlowType
     recorded_at: datetime
     amount: int
+
+class UpdateCashFlowResponse(BaseResponse):
+    id: int
+    title: str
+    type: CashFlowType
+    recorded_at: datetime
+    amount: int
