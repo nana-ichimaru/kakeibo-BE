@@ -14,9 +14,8 @@ def get_cash_flows_by_month(
         # CashFlow テーブル（モデル）を対象にした SELECT クエリを作成
         select(CashFlow)
         # recorded_at が start_date 以上（＝月初以降）を指定
-        .where(CashFlow.recorded_at >= month_start_date)
         # recorded_at が end_date 未満（＝翌月の月初より前）を指定
-        .where(CashFlow.recorded_at < next_month_start_date)
+        .where(CashFlow.recorded_at >= month_start_date, CashFlow.recorded_at < next_month_start_date)
     )
     # 型は Result（SQLAlchemy の「結果セット」を表すオブジェクト）。
     # SQLAlchemy で組み立てた stmt（SQL文の設計図）を、実際にデータベースに送って実行する

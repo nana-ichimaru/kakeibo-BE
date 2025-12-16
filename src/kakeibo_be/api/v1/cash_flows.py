@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from kakeibo_be.exceptions.business_exception import BusinessException
+from kakeibo_be.loggers.custom_logger import logger
 from kakeibo_be.logic.calculate.calculate_datetime import (
     get_month_start_date,
     get_next_month_start_date,
@@ -73,6 +74,7 @@ def create_cash_flow(
         session.commit()
     except Exception as e:
         session.rollback()
+        logger.exception("CashFlowの作成に失敗しました。")
         # 意図的にtryの中でキャッチしたエラーを再度発生させてpythonを止める
         raise e
 
@@ -93,6 +95,7 @@ def update_cash_flow(
     original_cash_flow = get_cash_flow_by_id(session=session, cash_flow_id=cash_flow_id)
 
     if original_cash_flow is None:
+        logger.info(f"該当する更新対象のCashFlow IDが見つかりません。id = {cash_flow_id}")
         raise BusinessException(message="CashFlow not found!")
     original_cash_flow.title = body.title
     original_cash_flow.type = body.type
@@ -105,6 +108,7 @@ def update_cash_flow(
         session.commit()
     except Exception as e:
         session.rollback()
+        logger.exception("CashFlowの更新に失敗しました。")
         # 意図的にtryの中でキャッチしたエラーを再度発生させてpythonを止める
         raise e
 
@@ -117,6 +121,25 @@ def update_cash_flow(
     )
 
 
-@router.delete("")
-def delete_cash_flow() -> dict:
-    return {"status": "ok"}
+# 対象のidを特定（パスパラメータ）
+# レスポンスは無しなので　None
+@router.delete("/{cash_flow_id}", response_model=None, status_code=204)
+def delete_cash_flow(cash_flow_id: int, session: Annotated[Session, Depends(get_db)]) -> None:
+    # 対象のidのCashFlowを取得
+    cash_flow = get_cash_flow_by_id(session=session, cash_flow_id=cash_flow_id)
+    # 存在しなければエラーを返す
+    if cash_flow is None:
+        logger.info("該当する削除対象のCashFlow IDが見つかりません。")
+        raise BusinessException(message="CashFlow not found!")
+    # 存在すれば削除
+    session.delete(cash_flow)
+
+    # コミット処理
+    try:
+        session.commit()
+    # エラーがExceptionを継承していればキャッチする
+    except Exception as e:
+        session.rollback()
+        logger.exception("CashFlowの削除に失敗しました。")
+        # ロールバックしたあと、キャッチした例外を再送出して処理を中断する
+        raise e
