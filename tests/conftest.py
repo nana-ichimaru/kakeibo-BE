@@ -5,12 +5,18 @@ import pytest
 
 from alembic import command
 from alembic.config import Config
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from kakeibo_be.core.database import get_database_url
 
+# 環境変数はここにあることを伝える。
+load_dotenv(".env.test.unit")
+
 
 # テストの開始1回目に自動でapply_migrations()が実行される設定
-@pytest.fixture(scope="session",autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def apply_migrations() -> Generator[None]:
     """pytest開始時にテストDBへAlembicマイグレーションを適用する"""
 
@@ -35,3 +41,23 @@ def apply_migrations() -> Generator[None]:
     command.upgrade(alembic_cfg, "head")
 
     yield
+
+
+@pytest.fixture
+def db_session() -> Generator[Session]:
+    database_url = get_database_url()
+    engine = create_engine(database_url, echo=False)
+    connection = engine.connect()
+    # 調べる
+    transaction = connection.begin()
+
+    testing_session = sessionmaker(bind=connection)
+
+    test_db = testing_session()
+    try:
+        yield test_db
+    finally:
+        test_db.close()
+        transaction.rollback()
+        connection.close()
+# transactionがなかった場合、rollback()をしなかった場合、transaction.rollback()をコメントアウトした場合の挙動を見てみる

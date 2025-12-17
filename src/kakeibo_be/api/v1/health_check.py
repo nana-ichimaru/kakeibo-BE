@@ -5,5 +5,5 @@ router = APIRouter()
 
 @router.get("")
 def health_check() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok!"}
 
