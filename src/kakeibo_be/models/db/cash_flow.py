@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,7 +15,7 @@ class CashFlow(Base):
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(30), nullable=False)
     type: Mapped[CashFlowType] = mapped_column(Enum(CashFlowType), nullable=False)
-    recorded_at: Mapped[datetime] = mapped_column(Date, nullable=False)
+    recorded_at: Mapped[date] = mapped_column(Date, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=get_now, onupdate=get_now

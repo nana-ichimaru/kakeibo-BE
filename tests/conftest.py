@@ -81,14 +81,15 @@ def rollback_tracker() -> RollbackTracker:
 def db_session_commit_error(
     db_session: Session, rollback_tracker: RollbackTracker, monkeypatch: pytest.MonkeyPatch
 ) -> Session:
+    original_rollback = db_session.rollback
     # attr アトラクターの略　調べる
     # monkeypatch.setattr引数は三つで、
     def fake_commit() -> None:
         raise Exception("commitに失敗しました。")
     
     def fake_rollback() -> None:
-        db_session.rollback()
         rollback_tracker.called = True
+        original_rollback()
 
     monkeypatch.setattr(db_session, "commit", fake_commit)
     monkeypatch.setattr(db_session, "rollback", fake_rollback)

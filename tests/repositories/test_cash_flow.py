@@ -10,7 +10,7 @@ from tests.factories.cash_flow import create_cash_flow
 # db_sessionは、@pytest.fixture conftestに記述しているから使える
 def test_get_cash_flow_by_id(db_session: Session) -> None:
     for i in range(1, 5):
-        mock_cach_flow: dict = {
+        mock_cach_flow = {
             "id": i,
             "title": f"もも_{i}",
             "recorded_at": date(year=2025, month=10, day=i),
@@ -30,7 +30,7 @@ def test_get_cash_flow_by_id(db_session: Session) -> None:
 
 
 def test_get_cash_flow_by_id_without_data(db_session: Session) -> None:
-    mock_cash_flow: dict = {"id": 1}
+    mock_cash_flow:dict = {"id": 1}
     create_cash_flow(db_session, **mock_cash_flow)
 
     result = get_cash_flow_by_id(session=db_session, cash_flow_id=2)
