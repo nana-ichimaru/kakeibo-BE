@@ -21,3 +21,17 @@ def client(db_session: Session) -> Generator[TestClient]:
         yield client
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_with_commit_error(db_session_commit_error: Session) -> Generator[TestClient]:
+    def override_get_db() -> Generator[Session]:
+        yield db_session_commit_error
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    client = TestClient(app, raise_server_exceptions=False)
+    try:
+        yield client
+    finally:
+        app.dependency_overrides.clear()

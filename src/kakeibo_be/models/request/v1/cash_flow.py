@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from pydantic import Field
 
@@ -9,11 +9,11 @@ from kakeibo_be.store.enum.cash_flow_type import CashFlowType
 class CreateCashFlowRequest(BaseRequest):
     title: str
     type: CashFlowType
-    recorded_at: datetime
+    recorded_at: date
     amount: int = Field(gt=0)
 
 class UpdateCashFlowRequest(BaseRequest):
     title: str
     type: CashFlowType
-    recorded_at: datetime
+    recorded_at: date
     amount: int 

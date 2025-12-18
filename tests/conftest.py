@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -60,4 +61,35 @@ def db_session() -> Generator[Session]:
         test_db.close()
         transaction.rollback()
         connection.close()
+
+
 # transactionがなかった場合、rollback()をしなかった場合、transaction.rollback()をコメントアウトした場合の挙動を見てみる
+
+# 設計図
+@dataclass
+class RollbackTracker:
+    called: bool = False
+
+# インスタンス
+@pytest.fixture
+def rollback_tracker() -> RollbackTracker:
+    return RollbackTracker()
+
+
+@pytest.fixture
+# 処理の結果の変更
+def db_session_commit_error(
+    db_session: Session, rollback_tracker: RollbackTracker, monkeypatch: pytest.MonkeyPatch
+) -> Session:
+    # attr アトラクターの略　調べる
+    # monkeypatch.setattr引数は三つで、
+    def fake_commit() -> None:
+        raise Exception("commitに失敗しました。")
+    
+    def fake_rollback() -> None:
+        db_session.rollback()
+        rollback_tracker.called = True
+
+    monkeypatch.setattr(db_session, "commit", fake_commit)
+    monkeypatch.setattr(db_session, "rollback", fake_rollback)
+    return db_session
