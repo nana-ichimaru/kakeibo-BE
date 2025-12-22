@@ -7,7 +7,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import Connection, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from kakeibo_be.core.database import get_database_url
@@ -45,30 +45,39 @@ def apply_migrations() -> Generator[None]:
 
 
 @pytest.fixture
-def db_session() -> Generator[Session]:
+def db_connection() -> Generator[Connection]:
     database_url = get_database_url()
     engine = create_engine(database_url, echo=False)
     connection = engine.connect()
     # 調べる
     transaction = connection.begin()
+    try:
+        yield connection
+    finally:
+        if transaction.is_active:
+            transaction.rollback()
+        connection.close()
 
-    testing_session = sessionmaker(bind=connection)
+
+@pytest.fixture
+def db_session(db_connection:Connection) -> Generator[Session]:
+    testing_session = sessionmaker(bind=db_connection)
 
     test_db = testing_session()
     try:
         yield test_db
     finally:
         test_db.close()
-        transaction.rollback()
-        connection.close()
 
 
 # transactionがなかった場合、rollback()をしなかった場合、transaction.rollback()をコメントアウトした場合の挙動を見てみる
+
 
 # 設計図
 @dataclass
 class RollbackTracker:
     called: bool = False
+
 
 # インスタンス
 @pytest.fixture
@@ -79,18 +88,28 @@ def rollback_tracker() -> RollbackTracker:
 @pytest.fixture
 # 処理の結果の変更
 def db_session_commit_error(
-    db_session: Session, rollback_tracker: RollbackTracker, monkeypatch: pytest.MonkeyPatch
-) -> Session:
-    original_rollback = db_session.rollback
+    db_connection:Connection, rollback_tracker: RollbackTracker, monkeypatch: pytest.MonkeyPatch
+) -> Generator[Session]:
+    testing_session = sessionmaker(bind=db_connection)
+
+    test_db_session = testing_session()
+    original_rollback = test_db_session.rollback
+
+
     # attr アトラクターの略　調べる
     # monkeypatch.setattr引数は三つで、
     def fake_commit() -> None:
         raise Exception("commitに失敗しました。")
-    
+
     def fake_rollback() -> None:
         rollback_tracker.called = True
         original_rollback()
 
-    monkeypatch.setattr(db_session, "commit", fake_commit)
-    monkeypatch.setattr(db_session, "rollback", fake_rollback)
-    return db_session
+    monkeypatch.setattr(test_db_session, "commit", fake_commit)
+    monkeypatch.setattr(test_db_session, "rollback", fake_rollback)
+    try:
+        yield test_db_session
+    finally:
+        test_db_session.close()
+    
+    
