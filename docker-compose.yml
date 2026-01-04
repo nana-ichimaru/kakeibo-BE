@@ -11,6 +11,7 @@ services:
       MYSQL_CONNECTION: ${MYSQL_CONNECTION}
       MYSQL_HOST: ${MYSQL_HOST}
       MYSQL_PORT: ${MYSQL_PORT}
+      FE_BASE_URL: ${FE_BASE_URL}
     ports:
       - "8000:8000"
     volumes:
