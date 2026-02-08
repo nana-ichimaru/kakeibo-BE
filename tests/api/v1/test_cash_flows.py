@@ -7,14 +7,14 @@ from tests.conftest import RollbackTracker
 from tests.factories.cash_flow import create_cash_flow
 
 
- # ----------------------------------------
-    # pytest.fixture の基本的な使い方
-    # ----------------------------------------
-    # pytest では、@pytest.fixture で定義された関数（fixture）は、
-    # テスト関数の「引数名」に fixture 名を書くことで自動的に利用できる。
-    #
-    # つまり fixture は、通常の関数のように import して呼び出すのではなく、
-    # 「テスト関数の引数に書くだけ」で pytest が自動的に実行し、その戻り値を渡してくれる。
+# ----------------------------------------
+# pytest.fixture の基本的な使い方
+# ----------------------------------------
+# pytest では、@pytest.fixture で定義された関数（fixture）は、
+# テスト関数の「引数名」に fixture 名を書くことで自動的に利用できる。
+#
+# つまり fixture は、通常の関数のように import して呼び出すのではなく、
+# 「テスト関数の引数に書くだけ」で pytest が自動的に実行し、その戻り値を渡してくれる。
 def test_create_cash_flow(client: TestClient) -> None:
     # ----------------------------------------
     # APIに送るリクエストボディ（作成するデータ）
@@ -40,7 +40,7 @@ def test_create_cash_flow(client: TestClient) -> None:
     # ----------------------------------------
     response = client.post(
         "/api/v1/cash-flows",  # ① URL（エンドポイント）
-        json=body,             # ② JSON形式のbody（作成データ）
+        json=body,  # ② JSON形式のbody（作成データ）
     )
 
     # ----------------------------------------
@@ -94,12 +94,9 @@ def test_get_cash_flow(client: TestClient, db_session: Session) -> None:
     target_month_number = 12
     target_params = {"target_month": f"2025-{target_month_number}-01"}
 
-    response = client.get(
-        "/api/v1/cash-flows",
-        params=target_params
-    )
+    response = client.get("/api/v1/cash-flows", params=target_params)
 
-    target_id = target_month_number 
+    target_id = target_month_number
 
     assert response.status_code == 200
     result = response.json()
@@ -118,18 +115,16 @@ def test_get_cash_flow(client: TestClient, db_session: Session) -> None:
 def test_get_cash_flow_no_data(client: TestClient, db_session: Session) -> None:
     target_params = {"target_month": "2025-12-01"}
 
-    response = client.get(
-        "/api/v1/cash-flows",
-        params=target_params
-    )
+    response = client.get("/api/v1/cash-flows", params=target_params)
 
     assert response.status_code == 200
     result = response.json()
     assert len(result) == 0
     assert type(result) is list
 
+
 def test_update_cash_flow(client: TestClient, db_session: Session) -> None:
-    mock_cach_flow:dict = {"id": 1}
+    mock_cach_flow: dict = {"id": 1}
     create_cash_flow(db_session, **mock_cach_flow)
 
     body = {
@@ -154,7 +149,7 @@ def test_update_cash_flow(client: TestClient, db_session: Session) -> None:
 
 
 def test_update_cash_flow_not_found(client: TestClient, db_session: Session) -> None:
-    mock_cach_flow:dict = {"id": 1}
+    mock_cach_flow: dict = {"id": 1}
     create_cash_flow(db_session, **mock_cach_flow)
 
     body = {
@@ -174,7 +169,6 @@ def test_update_cash_flow_not_found(client: TestClient, db_session: Session) -> 
     result = response.json()
     assert result["detail"] == "CashFlow not found!"
 
-
     # ----------------------------
     # テストの目的：
     # 「キャッシュフロー更新処理で commit が失敗した場合に、
@@ -183,10 +177,10 @@ def test_update_cash_flow_not_found(client: TestClient, db_session: Session) -> 
     #  3) エラーメッセージが想定通りであること
     # を確認する
     # ----------------------------
+
+
 def test_update_cash_flow_error(
-    client_with_commit_error: TestClient,
-    rollback_tracker: RollbackTracker,
-    db_session: Session
+    client_with_commit_error: TestClient, rollback_tracker: RollbackTracker, db_session: Session
 ) -> None:
     # ----------------------------
     # 事前準備：更新対象のデータをDBに作成する
@@ -244,7 +238,7 @@ def test_update_cash_flow_error(
 
 
 def test_delete_cash_flow(client: TestClient, db_session: Session) -> None:
-    mock_cach_flow:dict = {"id": 1}
+    mock_cach_flow: dict = {"id": 1}
     create_cash_flow(db_session, **mock_cach_flow)
 
     cash_flow_id = 1
@@ -256,7 +250,7 @@ def test_delete_cash_flow(client: TestClient, db_session: Session) -> None:
 
 
 def test_delete_cash_flow_not_found(client: TestClient, db_session: Session) -> None:
-    mock_cach_flow:dict = {"id": 1}
+    mock_cach_flow: dict = {"id": 1}
     create_cash_flow(db_session, **mock_cach_flow)
 
     cash_flow_id = 2
@@ -269,9 +263,10 @@ def test_delete_cash_flow_not_found(client: TestClient, db_session: Session) -> 
     assert result["detail"] == "CashFlow not found!"
 
 
-def test_delete_cash_flow_error(client_with_commit_error: TestClient,
-    rollback_tracker: RollbackTracker,db_session: Session) -> None:
-    mock_cach_flow:dict = {"id": 1}
+def test_delete_cash_flow_error(
+    client_with_commit_error: TestClient, rollback_tracker: RollbackTracker, db_session: Session
+) -> None:
+    mock_cach_flow: dict = {"id": 1}
     create_cash_flow(db_session, **mock_cach_flow)
 
     cash_flow_id = 1

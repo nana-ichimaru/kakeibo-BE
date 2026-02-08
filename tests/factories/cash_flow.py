@@ -27,4 +27,3 @@ def create_cash_flow(session: Session, **override: dict) -> CashFlow:
         raise e
 
     return cash_flow
-

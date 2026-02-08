@@ -30,7 +30,7 @@ def test_get_cash_flow_by_id(db_session: Session) -> None:
 
 
 def test_get_cash_flow_by_id_without_data(db_session: Session) -> None:
-    mock_cash_flow:dict = {"id": 1}
+    mock_cash_flow: dict = {"id": 1}
     create_cash_flow(db_session, **mock_cash_flow)
 
     result = get_cash_flow_by_id(session=db_session, cash_flow_id=2)

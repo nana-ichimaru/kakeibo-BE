@@ -12,8 +12,9 @@ class CreateCashFlowRequest(BaseRequest):
     recorded_at: date
     amount: int = Field(gt=0)
 
+
 class UpdateCashFlowRequest(BaseRequest):
     title: str
     type: CashFlowType
     recorded_at: date
-    amount: int 
+    amount: int = Field(gt=0)

@@ -73,6 +73,7 @@ def db_connection() -> Generator[Connection]:
         # 最後に connection を必ず閉じる（リソース解放）
         connection.close()
 
+
 @pytest.fixture
 def db_session(db_connection: Connection) -> Generator[Session]:
     # db_connection fixture で作成した Connection を使って Session を作るための設定を作成する
@@ -93,7 +94,6 @@ def db_session(db_connection: Connection) -> Generator[Session]:
 
 
 # transactionがなかった場合、rollback()をしなかった場合、transaction.rollback()をコメントアウトした場合の挙動を見てみる
-
 
 
 # ----------------------------
@@ -126,9 +126,7 @@ def rollback_tracker() -> RollbackTracker:
 # commit 失敗の異常系を再現できるようにする
 @pytest.fixture
 def db_session_commit_error(
-    db_connection: Connection,
-    rollback_tracker: RollbackTracker,
-    monkeypatch: pytest.MonkeyPatch
+    db_connection: Connection, rollback_tracker: RollbackTracker, monkeypatch: pytest.MonkeyPatch
 ) -> Generator[Session]:
     # db_connection fixture で作成した Connection を bind して Session を作る設定を作成する
     # bind を統一することで、テストデータ作成とAPI処理で同じ connection を利用できる

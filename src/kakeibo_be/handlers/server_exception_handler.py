@@ -11,9 +11,3 @@ def handler(request: Request, exc: Exception) -> JSONResponse:
         # JOSON型にdump
         content=response_body.model_dump(),
     )
-    
-    
-
-
-
-
